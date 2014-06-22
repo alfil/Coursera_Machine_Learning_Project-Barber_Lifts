@@ -1,0 +1,74 @@
+Machine learning algorithm to predict how well barbel lifts are being made
+========================================================
+
+# EXECUTIVE SUMMARY
+This document describes a model for the prediction of the way in which a barber lift is performed based in different measures got from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in five different ways in order to realize this study. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har.
+
+For the purpose of this assignment a training and a testing sets were providing.
+
+Once created the model from 20% of the training set, the result obtained can be seen in the Appendix (Figure 1). Here it can be seen the expected out of sample error.
+
+Also, in Appendix (Figure 2), it can be seen the prediction for the 20 different test cases.
+
+
+# MODEL CREATION
+
+## DATA HANDLING
+Two different sets will be used, one for training and one for the 20 different test cases
+```{r}
+train <- read.csv("pml-training.csv")
+test <- read.csv("pml-testing.csv")
+```
+
+## VARIABLES ANALYSIS
+We will first drop all variables that in the test have all NAs or blanks, and then those that are not related to the accelerators measures, like name of the user, time, ... (the first 7 columns)
+```{r}
+test <- test[,colSums(is.na(test))<nrow(test)]
+valid_cols <- c(names(test)[8:length(names(test))], "classe")
+train <- train[, names(train) %in% valid_cols]
+```
+
+## PARTITION
+For the creation of the model, the training test will be divided in two subsets:
+- 60% for the training
+- 40% for its testing
+
+```{r}
+## Partition
+library(caret)
+train1_index <- createDataPartition(train$classe, p=0.6, list=FALSE)
+train1 <- train[train1_index,]
+test1 <- train[-train1_index,]
+```
+
+## TRAINING
+The model will used the Random Forest method.
+
+As there are different type of errors in the performance of the exercise, we don't expect a linear model.
+
+```{r}
+## Random Forest
+modFit <- train(train1$classe~., data=train1, method="rf")
+modFit
+```
+
+## TESTING
+Once, we have created the model, we test it with the remainder 40% of the training subset
+```{r}
+predictions <- predict(modFit, newdata = test1)
+```
+
+
+# APPENDIX
+
+## FIGURE 1
+
+```{r}
+confusionMatrix(predictions, test1$classe)
+```
+
+## FIGURE 2
+
+```{r}
+predict(modFit, newdata=test)
+```
